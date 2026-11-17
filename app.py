@@ -1043,9 +1043,8 @@ def generate_pdf_report(pdf_path, meta, trades, summary_df, grid_sorted=None, df
 # --- END CORE ENGINE ---
 
 
-
 # -----------------------------------------------------------------------------
-# KONFIGURASI HALAMAN STREAMLIT
+# KONFIGURASI HALAMAN STREAMLIT & TEMA PROFESSIONAL FINTECH
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="USTEC Breakout Hub - Strategy Dashboard",
@@ -1054,76 +1053,171 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom Styling CSS
+# Custom Styling CSS (Bloomberg / TradingView Dark Modern Aesthetic)
 st.markdown("""
 <style>
-    .main-header {
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Terminal Banner Header */
+    .terminal-banner {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 22px 26px;
+        margin-bottom: 22px;
+        box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25);
+    }
+    .live-dot {
+        height: 10px;
+        width: 10px;
+        background-color: #10B981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 10px #10B981;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .terminal-tag {
+        font-size: 11px;
+        font-weight: 700;
+        color: #94A3B8;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+    }
+    .ticker-pill {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60A5FA;
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 11.5px;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .broker-pill {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34D399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 11.5px;
+        font-weight: 600;
+    }
+    .hero-title {
+        color: #FFFFFF;
         font-size: 26px;
         font-weight: 800;
-        color: #0F172A;
-        margin-bottom: 2px;
+        margin: 8px 0 4px 0;
+        letter-spacing: -0.5px;
     }
-    .sub-header {
-        font-size: 14px;
-        color: #64748B;
-        margin-bottom: 18px;
+    .hero-sub {
+        color: #94A3B8;
+        font-size: 13.5px;
+        margin: 0;
     }
-    .metric-card {
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
+    .qs-box {
+        display: flex;
+        gap: 16px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 10px;
-        padding: 14px 16px;
-        margin-bottom: 10px;
+        padding: 10px 16px;
     }
-    .metric-title {
-        font-size: 12px;
-        font-weight: 600;
+    .qs-item {
+        display: flex;
+        flex-direction: column;
+    }
+    .qs-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        color: #64748B;
+        letter-spacing: 0.8px;
+    }
+    .qs-val {
+        font-size: 13px;
+        font-weight: 700;
+        color: #F8FAFC;
+    }
+
+    /* KPI Tiles */
+    .kpi-tile {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .kpi-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px -4px rgba(0, 0, 0, 0.1);
+    }
+    .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    .kpi-title {
+        font-size: 11px;
+        font-weight: 700;
         color: #64748B;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
     }
-    .metric-val {
-        font-size: 22px;
+    .kpi-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 12px;
+    }
+    .kpi-val {
+        font-size: 26px;
         font-weight: 800;
-        color: #0F172A;
-        margin-top: 4px;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
     }
-    .metric-sub {
+    .kpi-sub {
         font-size: 12px;
-        color: #334155;
-        margin-top: 2px;
+        color: #475569;
+        margin-top: 6px;
     }
-    .badge-win {
-        background-color: #DCFCE7;
-        color: #166534;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 12px;
-    }
-    .badge-loss {
-        background-color: #FEE2E2;
-        color: #991B1B;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 12px;
-    }
-    .badge-saved {
-        background-color: #FEF3C7;
-        color: #92400E;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 12px;
-    }
+
+    /* Border Accents */
+    .tile-profit { border-top: 4px solid #10B981; }
+    .tile-win { border-top: 4px solid #3B82F6; }
+    .tile-risk { border-top: 4px solid #F59E0B; }
+    .tile-streak { border-top: 4px solid #8B5CF6; }
+    .tile-nofloat { border-top: 4px solid #06B6D4; }
+    .tile-saved { border-top: 4px solid #D97706; }
+    .tile-runner { border-top: 4px solid #6366F1; }
+
+    /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
+        border-bottom: 1px solid #E2E8F0;
+        padding-bottom: 4px;
+        margin-bottom: 16px;
     }
     .stTabs [data-baseweb="tab"] {
-        padding: 8px 18px;
-        font-weight: 600;
-        border-radius: 6px;
+        padding: 10px 20px;
+        font-weight: 700;
+        font-size: 13.5px;
+        border-radius: 8px;
+        color: #475569;
+    }
+    .stTabs [aria-selected="true"] {
+        background: #0F172A !important;
+        color: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1143,12 +1237,12 @@ def get_cached_ticks(file_path, server_offset, tz_mode):
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("### ⚡ USTEC Strategy Hub")
-    st.caption("Intraday Range Breakout & Risk Engine")
+    st.caption("Intraday Range Breakout • Institutional Risk Engine")
     st.markdown("---")
 
     # 1. Sumber Data CSV Tick
     st.markdown("#### 📂 Sumber Data Tick")
-    default_csv = "ticks_USTEC.csv"
+    default_csv = "ticks_USTEC_ringan.csv" if os.path.exists("ticks_USTEC_ringan.csv") else "ticks_USTEC.csv"
     data_mode = st.radio(
         "Pilih Data:",
         ["Gunakan File Lokal di Folder", "Upload File CSV Baru"],
@@ -1162,13 +1256,12 @@ with st.sidebar:
         if os.path.exists(local_path):
             tick_file_to_load = local_path
             file_sz_mb = os.path.getsize(local_path) / (1024 * 1024)
-            st.success(f"File ditemukan: {os.path.basename(local_path)} ({file_sz_mb:.1f} MB)")
+            st.success(f"File terdeteksi: {os.path.basename(local_path)} ({file_sz_mb:.1f} MB)")
         else:
             st.error(f"File '{local_path}' tidak ditemukan di folder kerja.")
     else:
-        uploaded_file = st.file_uploader("Upload CSV Ticks MT5:", type=["csv"])
+        uploaded_file = st.file_uploader("Upload CSV Ticks MT5:", type=["csv", "gz"])
         if uploaded_file is not None:
-            # Simpan temporary
             temp_path = os.path.join(CURRENT_DIR, "_uploaded_ticks.csv")
             with open(temp_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
@@ -1178,7 +1271,7 @@ with st.sidebar:
     st.markdown("---")
 
     # 2. Pemilihan Range
-    st.markdown("#### 🕒 Pemilihan Range")
+    st.markdown("#### 🕒 Pemilihan Sesi / Range")
     range_options = {
         4: "Range 4: 21:52 - 18:04 (+1d) [09:52 - 06:04 WIB] (Paling Populer)",
         1: "Range 1: 00:00 - 08:30 [12:00 - 20:30 WIB]",
@@ -1187,13 +1280,14 @@ with st.sidebar:
         5: "Range 5: 18:04 - 19:33 [06:04 - 07:33 WIB]",
         6: "Range 6: 19:33 - 21:13 [07:33 - 09:13 WIB]",
         7: "Range 7: 21:13 - 21:52 [09:13 - 09:52 WIB]",
+        -1: "Range 1 s/d 6 (Tanpa Range 7)",
         0: "Semua Range (Range 1 s/d 7)",
     }
     selected_range_key = st.selectbox(
         "Pilih Sesi / Range:",
         options=list(range_options.keys()),
         format_func=lambda k: range_options[k],
-        index=0  # Default Range 4
+        index=0
     )
 
     st.markdown("---")
@@ -1207,7 +1301,7 @@ with st.sidebar:
         use_sl = st.checkbox("Pakai Stop Loss", value=True)
         sl_input = st.number_input("Target SL (Poin):", min_value=1.0, max_value=100.0, value=8.0, step=1.0, disabled=not use_sl)
 
-    fill_mode = st.selectbox("Mode Eksekusi Fill:", ["tick (Real Slippage)", "level (Pending Level)"], index=0)
+    fill_mode = st.selectbox("Mode Eksekusi Fill:", ["tick (Real Slippage - Akurat)", "level (Pending Level Murni)"], index=0)
     fill_arg = "tick" if "tick" in fill_mode else "level"
 
     st.markdown("---")
@@ -1226,7 +1320,7 @@ with st.sidebar:
     # 5. Fitur Optimizer & PDF
     st.markdown("#### 🧩 Fitur Analisis Tambahan")
     opt_grid = st.checkbox("Jalankan Grid Matrix Optimizer (SL vs TP)", value=True)
-    opt_pdf = st.checkbox("Buat File Laporan PDF Siap Cetak", value=True)
+    opt_pdf = st.checkbox("Siapkan Dokumen Laporan PDF Visual", value=True)
 
     btn_run = st.button("🚀 JALANKAN ANALISIS", type="primary", use_container_width=True)
 
@@ -1234,10 +1328,9 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 # MAIN DASHBOARD AREA
 # -----------------------------------------------------------------------------
-st.markdown('<div class="main-header">⚡ USTEC Breakout Strategy Hub</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Platform Kuantitatif & Simulator Risiko Intraday Range Breakout US Tech 100 (Exness/CFD)</div>', unsafe_allow_html=True)
-
 if not tick_file_to_load or not os.path.exists(tick_file_to_load):
+    st.markdown('<div class="hero-title" style="color:#0F172A;">⚡ USTEC Breakout Strategy Hub</div>', unsafe_allow_html=True)
+    st.markdown('<p class="hero-sub" style="color:#64748B; margin-bottom:20px;">Platform Kuantitatif & Simulator Risiko Intraday Range Breakout US Tech 100 (Exness/CFD)</p>', unsafe_allow_html=True)
     st.info("👋 Silakan pilih atau upload file CSV tick di menu samping kiri untuk memulai analisis.")
     st.stop()
 
@@ -1264,7 +1357,9 @@ args = SimpleNamespace(
 
 # Tentukan range yang diuji
 ranges = dict(DEFAULT_RANGES)
-if selected_range_key != 0:
+if selected_range_key == -1:
+    ranges = {k: v for k, v in DEFAULT_RANGES.items() if k in (1, 2, 3, 4, 5, 6)}
+elif selected_range_key != 0:
     ranges = {selected_range_key: DEFAULT_RANGES[selected_range_key]}
 
 sess_label = {}
@@ -1329,44 +1424,87 @@ if opt_grid:
         )
 
 # -----------------------------------------------------------------------------
-# TOP METRICS CARDS (BARIS 1 & 2)
+# MODERN TERMINAL HEADER BANNER
+# -----------------------------------------------------------------------------
+rrr_ratio = f"1 : {args.tp/args.sl:.2f}" if (args.sl and args.sl > 0) else "Tanpa SL"
+sess_selected_name = "Range 1 s/d 6" if selected_range_key == -1 else ("Semua Range (1-7)" if selected_range_key == 0 else f"Range {selected_range_key}")
+
+st.markdown(f"""
+<div class="terminal-banner">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                <span class="live-dot"></span>
+                <span class="terminal-tag">QUANTITATIVE BREAKOUT ENGINE</span>
+                <span class="ticker-pill">USTEC • US TECH 100</span>
+                <span class="broker-pill">SPREAD 1.0 PT • EXNESS CFD</span>
+            </div>
+            <div class="hero-title">USTEC Breakout Strategy Hub</div>
+            <p class="hero-sub">Intraday Range Breakout • First-Hit Execution • MAE/MFE Risk Simulator • Matrix Optimizer</p>
+        </div>
+        <div class="qs-box">
+            <div class="qs-item"><span class="qs-lbl">SESI DIUJI</span><span class="qs-val">{sess_selected_name}</span></div>
+            <div class="qs-item"><span class="qs-lbl">TARGET RRR</span><span class="qs-val">{rrr_ratio}</span></div>
+            <div class="qs-item"><span class="qs-lbl">1 POIN IDR</span><span class="qs-val">{fmt_idr(cap_sim['point_val_idr'], with_sign=False)}</span></div>
+            <div class="qs-item"><span class="qs-lbl">TOTAL TRADES</span><span class="qs-val">{total_trades:,} Posisi</span></div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+
+# -----------------------------------------------------------------------------
+# HERO KPI METRIC TILES (GRID 4 + 3)
 # -----------------------------------------------------------------------------
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
+    is_profit = cap_sim['net_profit_idr'] >= 0
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Net Profit & ROI</div>
-        <div class="metric-val" style="color:{'#16A34A' if cap_sim['net_profit_idr'] >= 0 else '#DC2626'}">{fmt_idr(cap_sim['net_profit_idr'])}</div>
-        <div class="metric-sub">ROI: <b>{cap_sim['roi_pct']:+.1f}%</b> ({fmt_idr(cap_sim['final_balance'], with_sign=False)})</div>
+    <div class="kpi-tile tile-profit">
+        <div class="kpi-header">
+            <span class="kpi-title">Net Profit & ROI</span>
+            <span class="kpi-badge" style="background:{'#DCFCE7' if is_profit else '#FEE2E2'}; color:{'#166534' if is_profit else '#991B1B'};">{cap_sim['roi_pct']:+.1f}% ROI</span>
+        </div>
+        <div class="kpi-val" style="color:{'#16A34A' if is_profit else '#DC2626'}">{fmt_idr(cap_sim['net_profit_idr'])}</div>
+        <div class="kpi-sub">Saldo Akhir: <b>{fmt_idr(cap_sim['final_balance'], with_sign=False)}</b></div>
     </div>
     """, unsafe_allow_html=True)
 
 with c2:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Win Rate Strategi</div>
-        <div class="metric-val">{win_rate:.1f}%</div>
-        <div class="metric-sub">{len(tp_trades)} Menang TP / {len(sl_trades)} Kalah SL</div>
+    <div class="kpi-tile tile-win">
+        <div class="kpi-header">
+            <span class="kpi-title">Win Rate Strategi</span>
+            <span class="kpi-badge" style="background:#DBEAFE; color:#1E40AF;">{len(tp_trades)} TP / {len(sl_trades)} SL</span>
+        </div>
+        <div class="kpi-val" style="color:#2563EB">{win_rate:.1f}%</div>
+        <div class="kpi-sub">Tingkat Kemenangan Target TP <b>{args.tp:g} poin</b></div>
     </div>
     """, unsafe_allow_html=True)
 
 with c3:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Max Drawdown</div>
-        <div class="metric-val" style="color:#D97706">{fmt_idr(cap_sim['max_dd_idr'], with_sign=False)}</div>
-        <div class="metric-sub"><b>{cap_sim['max_dd_pct']:.1f}%</b> dari puncak saldo</div>
+    <div class="kpi-tile tile-risk">
+        <div class="kpi-header">
+            <span class="kpi-title">Max Drawdown (DD)</span>
+            <span class="kpi-badge" style="background:#FEF3C7; color:#92400E;">{'SANGAT AMAN' if cap_sim['max_dd_pct'] < 15 else 'MODERAT'}</span>
+        </div>
+        <div class="kpi-val" style="color:#D97706">{cap_sim['max_dd_pct']:.1f}%</div>
+        <div class="kpi-sub">Penurunan Puncak: <b>{fmt_idr(cap_sim['max_dd_idr'], with_sign=False)}</b></div>
     </div>
     """, unsafe_allow_html=True)
 
 with c4:
     streak_cur_lbl = f"+{last_streak} Win" if last_streak > 0 else (f"{last_streak} Loss" if last_streak < 0 else "0")
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Rekor Beruntun (Streak)</div>
-        <div class="metric-val" style="color:#2563EB"><span style="color:#16A34A">{max_win_streak}W</span> / <span style="color:#DC2626">{max_loss_streak}L</span></div>
-        <div class="metric-sub">Longest Win: <b>{max_win_streak}x</b> | Longest Loss: <b>{max_loss_streak}x</b></div>
+    <div class="kpi-tile tile-streak">
+        <div class="kpi-header">
+            <span class="kpi-title">Rekor Streak (Beruntun)</span>
+            <span class="kpi-badge" style="background:#F3E8FF; color:#6B21A8;">Aktif: {streak_cur_lbl}</span>
+        </div>
+        <div class="kpi-val"><span style="color:#16A34A">{max_win_streak}W</span> <span style="color:#94A3B8; font-size:20px;">/</span> <span style="color:#DC2626">{max_loss_streak}L</span></div>
+        <div class="kpi-sub">Longest Win: <b>{max_win_streak}x</b> | Longest Loss: <b>{max_loss_streak}x</b></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1374,34 +1512,41 @@ c5, c6, c7 = st.columns(3)
 
 with c5:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Rekor No Floating</div>
-        <div class="metric-val" style="color:#059669">{no_float_total} Trade</div>
-        <div class="metric-sub"><b>{no_float_pct:.1f}%</b> langsung tembus TP tanpa minus</div>
+    <div class="kpi-tile tile-nofloat">
+        <div class="kpi-header">
+            <span class="kpi-title">⚡ Rekor No Floating</span>
+            <span class="kpi-badge" style="background:#CFFAFE; color:#0E7490;">{no_float_pct:.1f}% Total</span>
+        </div>
+        <div class="kpi-val" style="color:#0891B2">{no_float_total} Trade</div>
+        <div class="kpi-sub">Langsung melesat tembus TP tanpa ada minus sama sekali</div>
     </div>
     """, unsafe_allow_html=True)
 
 with c6:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">SL Tembus TP Nanti (Penyelamatan)</div>
-        <div class="metric-val" style="color:#B45309">{n_sl_saved} Trade</div>
-        <div class="metric-sub"><b>{pct_sl_saved:.1f}%</b> SL berbalik tembus TP (Rata2 koreksi: {avg_saved_mae:.1f} pts)</div>
+    <div class="kpi-tile tile-saved">
+        <div class="kpi-header">
+            <span class="kpi-title">🛡️ SL Tembus TP (Penyelamatan)</span>
+            <span class="kpi-badge" style="background:#FEF3C7; color:#B45309;">{pct_sl_saved:.1f}% Trade SL</span>
+        </div>
+        <div class="kpi-val" style="color:#B45309">{n_sl_saved} Trade</div>
+        <div class="kpi-sub">Kena SL duluan tapi berbalik tembus TP (Rata2 koreksi: -{avg_saved_mae:.1f} pts)</div>
     </div>
     """, unsafe_allow_html=True)
 
 with c7:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Rata2 Peak Profit (Daya Ledak)</div>
-        <div class="metric-val" style="color:#7C3AED">+{avg_peak_all:.1f} pts</div>
-        <div class="metric-sub">Puncak Runner Terjauh: <b>+{max_peak_all:.1f} pts</b></div>
+    <div class="kpi-tile tile-runner">
+        <div class="kpi-header">
+            <span class="kpi-title">🚀 Daya Ledak Peak Profit (MFE)</span>
+            <span class="kpi-badge" style="background:#EEF2FF; color:#4338CA;">Max: +{max_peak_all:.1f} pts</span>
+        </div>
+        <div class="kpi-val" style="color:#4F46E5">+{avg_peak_all:.1f} pts</div>
+        <div class="kpi-sub">Potensi Rupiah: <b>+{fmt_idr(avg_peak_all * cap_sim['point_val_idr'], with_sign=False)}</b> / trade ({cap_sim['lot']:.2f} lot)</div>
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-
-st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------------------------
@@ -1416,25 +1561,47 @@ tab_chart, tab_history, tab_grid, tab_export = st.tabs([
 
 
 # =============================================================================
-# TAB 1: GRAFIK & STATISTIK PERFORMA
+# TAB 1: GRAFIK EKUITAS & STATISTIK PERFORMA
 # =============================================================================
 with tab_chart:
-    col_g1, col_g2 = st.columns([1.6, 1.0])
+    col_g1, col_g2 = st.columns([1.65, 1.0])
 
     with col_g1:
-        st.markdown("##### 📈 Grafik Pertumbuhan Saldo Akun (Equity Curve)")
-        fig_eq, ax_eq = plt.subplots(figsize=(8.5, 4.2), dpi=130)
-        ax_eq.plot(cap_sim["balance_history"], color="#2563EB", linewidth=2.2, label="Saldo Akun (IDR)")
-        ax_eq.axhline(capital_input, color="#94A3B8", linestyle="--", linewidth=1.2, label=f"Modal Awal ({fmt_idr(capital_input, with_sign=False)})")
-        ax_eq.fill_between(range(len(cap_sim["balance_history"])), capital_input, cap_sim["balance_history"],
-                           where=np.array(cap_sim["balance_history"]) >= capital_input, facecolor="#DCFCE7", alpha=0.5)
-        ax_eq.fill_between(range(len(cap_sim["balance_history"])), capital_input, cap_sim["balance_history"],
-                           where=np.array(cap_sim["balance_history"]) < capital_input, facecolor="#FEE2E2", alpha=0.5)
-        ax_eq.set_title("Pertumbuhan Saldo Realistis (Akumulasi PnL)", fontsize=11, fontweight="bold", pad=10)
-        ax_eq.set_xlabel("Jumlah Trade Berjalan", fontsize=9)
-        ax_eq.set_ylabel("Saldo (IDR)", fontsize=9)
-        ax_eq.grid(True, linestyle=":", alpha=0.6)
-        ax_eq.legend(loc="upper left", fontsize=8.5)
+        st.markdown("##### 📈 Kurva Pertumbuhan Saldo Akun (Equity Curve)")
+        fig_eq, ax_eq = plt.subplots(figsize=(8.8, 4.3), dpi=140)
+        
+        # Tema Elegan FinTech Dark Frame
+        fig_eq.patch.set_facecolor('#0F172A')
+        ax_eq.set_facecolor('#0F172A')
+        
+        b_hist = cap_sim["balance_history"]
+        ax_eq.plot(b_hist, color="#38BDF8", linewidth=2.4, label="Saldo Akun Realistis (IDR)", zorder=3)
+        ax_eq.axhline(capital_input, color="#64748B", linestyle="--", linewidth=1.2, label=f"Modal Awal ({fmt_idr(capital_input, with_sign=False)})")
+        
+        # Area shading
+        ax_eq.fill_between(range(len(b_hist)), capital_input, b_hist,
+                           where=np.array(b_hist) >= capital_input, facecolor="#10B981", alpha=0.22, zorder=2)
+        ax_eq.fill_between(range(len(b_hist)), capital_input, b_hist,
+                           where=np.array(b_hist) < capital_input, facecolor="#EF4444", alpha=0.22, zorder=2)
+        
+        # High Water Mark line
+        peaks = np.maximum.accumulate(b_hist)
+        ax_eq.plot(peaks, color="#F59E0B", linestyle=":", linewidth=1.3, alpha=0.8, label="High-Water Mark (Puncak Saldo)")
+        
+        ax_eq.set_title("Kurva Ekuitas Modal (Akumulasi PnL Nyata per Trade)", fontsize=10.5, fontweight="bold", color="#F8FAFC", pad=10)
+        ax_eq.set_xlabel("Trade Berjalan (Posisi Terpicu)", fontsize=8.5, color="#94A3B8")
+        ax_eq.set_ylabel("Saldo (Rupiah)", fontsize=8.5, color="#94A3B8")
+        ax_eq.tick_params(colors="#94A3B8", labelsize=8)
+        ax_eq.grid(True, linestyle=":", alpha=0.18, color="#CBD5E1")
+        
+        # Legend styling
+        leg = ax_eq.legend(loc="upper left", fontsize=8, facecolor="#1E293B", edgecolor="#334155")
+        for text in leg.get_texts():
+            text.set_color("#F8FAFC")
+            
+        for spine in ax_eq.spines.values():
+            spine.set_color("#334155")
+            
         plt.tight_layout()
         st.pyplot(fig_eq)
         plt.close(fig_eq)
@@ -1446,29 +1613,25 @@ with tab_chart:
         p80_mfe = np.percentile(trades["mfe"], 20) if len(trades) else 0.0
 
         st.markdown(f"""
-        <div style="background:#F1F5F9; border-radius:8px; padding:14px; border:1px solid #CBD5E1; font-size:13px; line-height:1.6;">
-            <b>🛡️ Rekomendasi Stop Loss (MAE Toleransi):</b><br>
-            • P80 MAE: <b>{p80_mae:.1f} poin</b><br>
-            • P90 MAE: <b>{p90_mae:.1f} poin</b><br>
-            <i>👉 80-90% trade yang menang tidak pernah floating minus lebih dari batas ini. SL ideal: <b>{p80_mae:.1f} - {p90_mae:.1f} poin</b>.</i>
-            <hr style="margin:10px 0;">
-            <b>🚀 Rekomendasi Take Profit (MFE Breakout):</b><br>
-            • Target Konservatif (80% trade tembus): <b>{p80_mfe:.1f} poin</b><br>
-            • Rata-rata Lari Breakout (MFE): <b>+{avg_peak_all:.1f} poin</b><br>
-            • Runner Maksimal: <b>+{max_peak_all:.1f} poin</b><br>
-            <i>👉 Target TP aman: <b>{p80_mfe:.1f} poin</b>, target agresif: <b>+{avg_peak_all:.1f} poin</b>.</i>
+        <div style="background:#F8FAFC; border-radius:12px; padding:16px; border:1px solid #E2E8F0; font-size:13px; line-height:1.6; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+            <b style="color:#0F172A; font-size:13.5px;">🛡️ Batas Stop Loss Optimal (MAE):</b><br>
+            • P80 MAE: <b style="color:#D97706;">{p80_mae:.1f} poin</b>  |  P90 MAE: <b style="color:#DC2626;">{p90_mae:.1f} poin</b><br>
+            <span style="color:#64748B; font-size:12px;">👉 80–90% trade yang menang tidak pernah floating minus melampaui batas ini. Pasang SL di <b>{p80_mae:.1f} - {p90_mae:.1f} poin</b> untuk win rate maksimal.</span>
+            <hr style="margin:10px 0; border:0; border-top:1px solid #E2E8F0;">
+            <b style="color:#0F172A; font-size:13.5px;">🚀 Target Take Profit Optimal (MFE):</b><br>
+            • Target Konservatif (80% trade tembus): <b style="color:#16A34A;">{p80_mfe:.1f} poin</b><br>
+            • Rata-rata Lari Breakout (MFE): <b style="color:#4F46E5;">+{avg_peak_all:.1f} poin</b><br>
+            <span style="color:#64748B; font-size:12px;">👉 Target scalping aman: <b>{p80_mfe:.1f} poin</b>. Target runner optimal: <b>+{avg_peak_all:.1f} poin</b>.</span>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
         st.markdown(f"""
-        <div style="background:#EFF6FF; border-radius:8px; padding:12px; border:1px solid #BFDBFE; font-size:12.5px;">
-            <b>⚙️ Spesifikasi Nilai Transaksi & Rekor:</b><br>
+        <div style="background:#F0FDF4; border-radius:12px; padding:14px 16px; border:1px solid #BBF7D0; font-size:12.5px; line-height:1.5;">
+            <b style="color:#166534;">⚙️ Spesifikasi Finansial Transaksi:</b><br>
             • Ukuran Lot: <b>{lot_input:.2f} Lot</b>  |  Nilai 1 Poin: <b>{fmt_idr(cap_sim['point_val_idr'], with_sign=False)}</b><br>
-            • Target Profit per TP: <b style="color:#16A34A">+{fmt_idr(args.tp * cap_sim['point_val_idr'], with_sign=False)}</b><br>
-            • Risiko Rugi per SL: <b style="color:#DC2626">-{fmt_idr((args.sl or 0) * cap_sim['point_val_idr'], with_sign=False)}</b> ({(args.sl or 0)*cap_sim['point_val_idr']/capital_input*100:.1f}% risiko modal)<br>
-            • Rekor Menang (Win Streak): <b style="color:#16A34A">{max_win_streak} Trade Beruntun</b><br>
-            • Rekor Kalah (Loss Streak): <b style="color:#DC2626">{max_loss_streak} Trade Beruntun</b>
+            • Keuntungan TP: <b style="color:#16A34A;">+{fmt_idr(args.tp * cap_sim['point_val_idr'], with_sign=False)}</b> (+{args.tp:g} pts)<br>
+            • Risiko Rugi SL: <b style="color:#DC2626;">-{fmt_idr((args.sl or 0) * cap_sim['point_val_idr'], with_sign=False)}</b> ({(args.sl or 0)*cap_sim['point_val_idr']/capital_input*100:.1f}% risiko modal)
         </div>
         """, unsafe_allow_html=True)
 
@@ -1480,9 +1643,8 @@ with tab_chart:
 # TAB 2: HISTORY DETAIL TRADE & ANALISIS STOP-OUT
 # =============================================================================
 with tab_history:
-    st.markdown("##### 📋 Riwayat Detail Setiap Trade")
+    st.markdown("##### 📋 Riwayat Detail Setiap Posisi")
 
-    # Format dataframe untuk tampilan interaktif
     h = trades.iloc[::-1].copy()
     h["Waktu Entry"] = h["entry_time"].dt.strftime("%Y-%m-%d %H:%M")
     h["Arah"] = h["dir"]
@@ -1513,52 +1675,62 @@ with tab_history:
     h["Spread"] = h["spread_at_entry"].round(1)
 
     # Filter pilihan
-    f_filter = st.radio("Tampilkan:", ["Semua Trade", "Hanya Kena TP", "Hanya Kena SL", "Kena SL Tapi Tembus TP Nanti (Penyelamatan)"], horizontal=True)
-    if f_filter == "Hanya Kena TP":
+    f_filter = st.radio("Filter Tampilan:", ["Semua Posisi", "Hanya Menang (TP)", "Hanya Kalah (SL)", "Penyelamatan: Kena SL Tapi Tembus TP Nanti"], horizontal=True)
+    if f_filter == "Hanya Menang (TP)":
         h_show = h[h["Hasil"] == "TP"]
-    elif f_filter == "Hanya Kena SL":
+    elif f_filter == "Hanya Kalah (SL)":
         h_show = h[h["Hasil"] == "SL"]
-    elif f_filter == "Kena SL Tapi Tembus TP Nanti (Penyelamatan)":
+    elif f_filter == "Penyelamatan: Kena SL Tapi Tembus TP Nanti":
         h_show = h[(h["Hasil"] == "SL") & (h["reached_tp_eventually"])]
     else:
         h_show = h
 
     cols_table = ["Waktu Entry", "Arah", "Entry", "TP", "Hasil", "Durasi Exit", "Floating Posisi", "Max Float sblm TP", "Peak Profit", "Spread"]
-    st.dataframe(h_show[cols_table], use_container_width=True, height=360)
+    st.dataframe(h_show[cols_table], use_container_width=True, height=380)
 
-    # Box Kesimpulan Analisis Stop-Out Prematur
+    # 3 Callout Cards Evaluasi Kualitatif
     st.markdown("---")
-    st.markdown("#### 💡 Kesimpulan Analisis Floating Sebelum TP & Runner Potential")
+    st.markdown("#### 💡 Analisis Mendalam Floating Sebelum TP & Runner Potential")
 
-    col_k1, col_k2 = st.columns(2)
-    with col_k1:
+    k1, k2, k3 = st.columns(3)
+    with k1:
         avg_tp_mae = tp_trades["mae"].mean() if len(tp_trades) else 0.0
         avg_tp_mfe = tp_trades["mfe"].mean() if len(tp_trades) else 0.0
         st.markdown(f"""
-        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:14px; font-size:13px; line-height:1.6;">
-            <b style="color:#166534; font-size:14px;">1. Analisis Trade Pemenang (Langsung Tembus TP):</b><br>
-            • Total Trade Menang: <b>{len(tp_trades)} trade</b> ({win_rate:.1f}%)<br>
-            • Rata-rata Floating (MAE) sebelum TP: <b>{avg_tp_mae:.2f} poin</b><br>
-            • Trade 'No Floating' (0 Drawdown): <b>{no_float_total} trade</b> ({no_float_pct:.1f}% melesat tanpa minus)<br>
-            • Rata-rata Peak Profit Pemenang: <b>+{avg_tp_mfe:.2f} poin</b> (Harga terus berlari jauh setelah TP {args.tp:g} pts)
+        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:16px; font-size:13px; line-height:1.6;">
+            <b style="color:#166534; font-size:14px;">1. Trade Pemenang Langsung:</b><br>
+            • Total Menang: <b>{len(tp_trades)} trade</b> ({win_rate:.1f}%)<br>
+            • Rata-rata Drawdown (MAE): <b>{avg_tp_mae:.2f} poin</b><br>
+            • Rekor No Floating: <b>{no_float_total} trade</b> ({no_float_pct:.1f}% 0 minus)<br>
+            • Rata-rata Runner TP: <b>+{avg_tp_mfe:.2f} poin</b>
         </div>
         """, unsafe_allow_html=True)
 
-    with col_k2:
+    with k2:
         if len(sl_trades) > 0:
             avg_sl_mfe_saved = sl_saved["mfe"].mean() if n_sl_saved else 0.0
             st.markdown(f"""
-            <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:14px; font-size:13px; line-height:1.6;">
-                <b style="color:#92400E; font-size:14px;">2. Analisis Trade Kena SL (Potensi Terselamatkan):</b><br>
-                • Total Kena SL: <b>{len(sl_trades)} trade</b><br>
-                • Kena SL Tapi Akhirnya Tembus TP: <b style="color:#B45309;">{n_sl_saved} trade ({pct_sl_saved:.1f}%)</b><br>
-                • Rata-rata Koreksi sebelum Tembus TP: <b>{avg_saved_mae:.2f} poin</b> (P80: <b>{p80_saved_mae:.2f} poin</b>)<br>
-                • Rata-rata Peak Profit SL Terselamatkan: <b>+{avg_sl_mfe_saved:.2f} poin</b><br>
-                <i>👉 Sebanyak <b>{pct_sl_saved:.1f}%</b> trade yang terkena SL sebenarnya tembus TP jika SL dilonggarkan ke <b>{p80_saved_mae:.1f} poin</b>!</i>
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:16px; font-size:13px; line-height:1.6;">
+                <b style="color:#92400E; font-size:14px;">2. Stop-Out Prematur Terselamatkan:</b><br>
+                • Kena SL Tapi Tembus TP: <b style="color:#B45309;">{n_sl_saved} trade ({pct_sl_saved:.1f}%)</b><br>
+                • Rata-rata Koreksi: <b>-{avg_saved_mae:.2f} poin</b><br>
+                • P80 Koreksi sblm TP: <b>-{p80_saved_mae:.2f} poin</b><br>
+                <i>👉 <b>{pct_sl_saved:.1f}%</b> trade SL selamat jika SL dipasang > <b>{p80_saved_mae:.1f} pts</b>!</i>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.success("Tidak ada trade yang terkena Stop Loss pada pengujian ini.")
+
+    with k3:
+        st.markdown(f"""
+        <div style="background:#F5F3FF; border:1px solid #DDD6FE; border-radius:10px; padding:16px; font-size:13px; line-height:1.6;">
+            <b style="color:#5B21B6; font-size:14px;">3. Daya Ledak Runner Breakout:</b><br>
+            • Rata-rata Peak MFE: <b>+{avg_peak_all:.2f} poin</b><br>
+            • Runner Tertinggi: <b>+{max_peak_all:.2f} poin</b><br>
+            • Nilai Rupiah Rata-rata: <b>+{fmt_idr(avg_peak_all * cap_sim['point_val_idr'], with_sign=False)}</b><br>
+            <i>👉 Breakout memiliki momentum sangat kuat untuk trailing stop!</i>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # =============================================================================
@@ -1569,17 +1741,20 @@ with tab_grid:
         col_m1, col_m2 = st.columns([1.2, 1.0])
         with col_m1:
             st.markdown("##### 🗺️ Heatmap Expectancy Matrix (SL vs TP)")
-            fig_hm, ax_hm = plt.subplots(figsize=(6.5, 4.6), dpi=140)
+            fig_hm, ax_hm = plt.subplots(figsize=(6.8, 4.8), dpi=140)
+            fig_hm.patch.set_facecolor('#0F172A')
+            ax_hm.set_facecolor('#0F172A')
+
             mat_vals = df_matrix.values
             v_max = max(abs(np.nanmin(mat_vals)), abs(np.nanmax(mat_vals)), 1.0)
             im = ax_hm.imshow(mat_vals, cmap="RdYlGn", aspect="auto", vmin=-v_max, vmax=v_max)
             ax_hm.set_xticks(range(len(df_matrix.columns)))
-            ax_hm.set_xticklabels(df_matrix.columns, fontsize=8, rotation=35)
+            ax_hm.set_xticklabels(df_matrix.columns, fontsize=8, rotation=35, color="#F8FAFC")
             ax_hm.set_yticks(range(len(df_matrix.index)))
-            ax_hm.set_yticklabels(df_matrix.index, fontsize=8)
-            ax_hm.set_title("Heatmap Expectancy (Poin / Trade) - Hijau = Paling Untung", fontsize=9.5, fontweight="bold", pad=8)
-            ax_hm.set_xlabel("Target Take Profit (TP)", fontsize=8.5)
-            ax_hm.set_ylabel("Stop Loss (SL)", fontsize=8.5)
+            ax_hm.set_yticklabels(df_matrix.index, fontsize=8, color="#F8FAFC")
+            ax_hm.set_title("Peta Ekspektansi (Poin / Trade) - Hijau = Area Paling Untung", fontsize=9.5, fontweight="bold", color="#F8FAFC", pad=8)
+            ax_hm.set_xlabel("Target Take Profit (TP)", fontsize=8.5, color="#94A3B8")
+            ax_hm.set_ylabel("Stop Loss (SL)", fontsize=8.5, color="#94A3B8")
 
             for i in range(len(df_matrix.index)):
                 for j in range(len(df_matrix.columns)):
@@ -1589,14 +1764,15 @@ with tab_grid:
                         color = "white" if abs(val) > v_max * 0.65 else "black"
                         ax_hm.text(j, i, f"{sign}{val:.1f}", ha="center", va="center", color=color, fontsize=7.5, fontweight="bold")
 
-            fig_hm.colorbar(im, ax=ax_hm, fraction=0.035, pad=0.03)
+            cbar = fig_hm.colorbar(im, ax=ax_hm, fraction=0.035, pad=0.03)
+            cbar.ax.tick_params(colors="#94A3B8", labelsize=7.5)
             plt.tight_layout()
             st.pyplot(fig_hm)
             plt.close(fig_hm)
 
         with col_m2:
             st.markdown(f"##### 🏆 Top {args.grid_top} Kombinasi SL vs TP Terbaik")
-            st.dataframe(grid_sorted.head(args.grid_top), use_container_width=True, height=380)
+            st.dataframe(grid_sorted.head(args.grid_top), use_container_width=True, height=390)
 
     else:
         st.info("Aktifkan centang 'Jalankan Grid Matrix Optimizer (SL vs TP)' di menu samping untuk melihat peta kombinasi.")
