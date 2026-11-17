@@ -1224,8 +1224,37 @@ st.markdown("""
 
 
 # -----------------------------------------------------------------------------
-# FUNGSI CACHE DATA TICK
+# FUNGSI CACHE DATA TICK & GENERATOR DEMO
 # -----------------------------------------------------------------------------
+@st.cache_data(show_spinner=False)
+def generate_demo_ticks():
+    """Menghasilkan dataset tick demo USTEC realistis (~4 bulan, 450 trade) untuk preview instan dashboard."""
+    np.random.seed(101)
+    b_days = pd.date_range("2024-07-01", "2024-10-31", freq="B")
+    all_times = []
+    prices = []
+    base_price = 19600.0
+
+    for day in b_days:
+        times_day = pd.date_range(
+            day + pd.Timedelta(hours=0, minutes=2),
+            day + pd.Timedelta(hours=23, minutes=58),
+            periods=250
+        )
+        all_times.extend(times_day)
+        noise = np.random.normal(0.05, 1.4, len(times_day))
+        hours = np.linspace(0, 24, len(times_day))
+        us_open_boost = 18.0 * np.sin((hours - 8) * np.pi / 12.0)
+        daily_path = base_price + np.cumsum(noise) + us_open_boost
+        base_price = daily_path[-1]
+        prices.extend(daily_path)
+
+    t = np.array(all_times, dtype="datetime64[ns]")
+    bid = np.array(prices, dtype=float)
+    ask = bid + 0.5  # spread 0.5 poin khas USTEC
+    return t, bid, ask
+
+
 @st.cache_data(show_spinner="⚡ Membaca & memproses jutaan tick ke memori...")
 def get_cached_ticks(file_path, server_offset, tz_mode):
     t, bid, ask = load_ticks([file_path], server_offset, tz_mode)
@@ -1242,24 +1271,42 @@ with st.sidebar:
 
     # 1. Sumber Data CSV Tick
     st.markdown("#### 📂 Sumber Data Tick")
-    default_csv = "ticks_USTEC_ringan.csv" if os.path.exists("ticks_USTEC_ringan.csv") else "ticks_USTEC.csv"
+    local_candidates = ["ticks_USTEC_ringan.csv", "ticks_USTEC.csv"]
+    existing_local = [f for f in local_candidates if os.path.exists(f)]
+
+    # Opsi pilihan mode data: default ke demo jika file lokal belum ada (misal di cloud)
+    mode_options = [
+        "🧪 Mode Demo (Preview Langsung)",
+        "📤 Upload File CSV (ticks_USTEC_ringan.csv)"
+    ]
+    if existing_local:
+        mode_options.insert(0, f"💻 File Lokal ({existing_local[0]})")
+
+    default_idx = 0
+    if st.session_state.get("switch_to_upload"):
+        default_idx = mode_options.index("📤 Upload File CSV (ticks_USTEC_ringan.csv)")
+        st.session_state["switch_to_upload"] = False
+
     data_mode = st.radio(
-        "Pilih Data:",
-        ["Gunakan File Lokal di Folder", "Upload File CSV Baru"],
-        index=0,
-        label_visibility="collapsed"
+        "Pilih Sumber Data:",
+        mode_options,
+        index=default_idx,
+        help="Pilih Mode Demo untuk preview instan tanpa upload file, atau upload ticks_USTEC_ringan.csv."
     )
 
     tick_file_to_load = None
-    if data_mode == "Gunakan File Lokal di Folder":
-        local_path = st.text_input("Path File CSV:", value=default_csv)
+    uploaded_file = None
+    is_demo_mode = "Mode Demo" in data_mode
+
+    if "File Lokal" in data_mode:
+        local_path = st.text_input("Path File CSV:", value=existing_local[0] if existing_local else "ticks_USTEC_ringan.csv")
         if os.path.exists(local_path):
             tick_file_to_load = local_path
             file_sz_mb = os.path.getsize(local_path) / (1024 * 1024)
             st.success(f"File terdeteksi: {os.path.basename(local_path)} ({file_sz_mb:.1f} MB)")
         else:
-            st.error(f"File '{local_path}' tidak ditemukan di folder kerja.")
-    else:
+            st.warning(f"File '{local_path}' tidak ditemukan di folder kerja.")
+    elif "Upload" in data_mode:
         uploaded_file = st.file_uploader("Upload CSV Ticks MT5:", type=["csv", "gz"])
         if uploaded_file is not None:
             temp_path = os.path.join(CURRENT_DIR, "_uploaded_ticks.csv")
@@ -1328,10 +1375,52 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 # MAIN DASHBOARD AREA
 # -----------------------------------------------------------------------------
-if not tick_file_to_load or not os.path.exists(tick_file_to_load):
-    st.markdown('<div class="hero-title" style="color:#0F172A;">⚡ USTEC Breakout Strategy Hub</div>', unsafe_allow_html=True)
-    st.markdown('<p class="hero-sub" style="color:#64748B; margin-bottom:20px;">Platform Kuantitatif & Simulator Risiko Intraday Range Breakout US Tech 100 (Exness/CFD)</p>', unsafe_allow_html=True)
-    st.info("👋 Silakan pilih atau upload file CSV tick di menu samping kiri untuk memulai analisis.")
+# Cek ketersediaan data tick
+if not is_demo_mode and not tick_file_to_load and not st.session_state.get("use_demo_clicked"):
+    # Tampilkan Welcome Hero Upload jika user memilih menu upload tapi belum memilih file
+    st.markdown('''
+    <div style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border: 1px solid #334155; border-radius: 16px; padding: 36px 30px; margin-bottom: 28px; box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.4); text-align: center;">
+        <div style="font-size: 42px; margin-bottom: 12px;">⚡</div>
+        <h1 style="color: #F8FAFC; font-size: 28px; font-weight: 800; margin: 0 0 10px 0;">USTEC Breakout Strategy Hub</h1>
+        <p style="color: #94A3B8; font-size: 15px; max-width: 650px; margin: 0 auto 10px auto; line-height: 1.6;">
+            Platform kuantitatif intraday range breakout & simulator risiko presisi tinggi US Tech 100 CFD.
+        </p>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    col_u1, col_u2 = st.columns([1.2, 1.0])
+    with col_u1:
+        st.markdown('''
+        <div style="background: white; border: 2px dashed #3B82F6; border-radius: 14px; padding: 24px; text-align: center; box-shadow: 0 8px 20px rgba(59,130,246,0.08); margin-bottom: 15px;">
+            <div style="font-size: 38px; margin-bottom: 8px;">📤</div>
+            <h4 style="margin: 0 0 6px 0; color: #0F172A; font-weight: 700;">Upload File CSV Tick Anda</h4>
+            <p style="color: #64748B; font-size: 13px; margin-bottom: 0;">
+                Drag & drop file <code>ticks_USTEC_ringan.csv</code> (~20-50 MB) hasil perampingan di bawah ini:
+            </p>
+        </div>
+        ''', unsafe_allow_html=True)
+        main_upload = st.file_uploader("Pilih file CSV:", type=["csv", "gz"], key="main_hero_uploader", label_visibility="collapsed")
+        if main_upload is not None:
+            temp_path = os.path.join(CURRENT_DIR, "_uploaded_ticks.csv")
+            with open(temp_path, "wb") as f:
+                f.write(main_upload.getbuffer())
+            tick_file_to_load = temp_path
+            st.rerun()
+
+    with col_u2:
+        st.markdown('''
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 24px 20px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🧪</div>
+            <h4 style="margin: 0 0 8px 0; color: #1E293B; font-weight: 700;">Belum ada file CSV? Coba Demo!</h4>
+            <p style="color: #64748B; font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
+                Langsung lihat seluruh tampilan dashboard profesional: 7 KPI glowing cards, Dark Mode Equity Curve, Heatmap Matrix Optimizer, dan analisis Premature Stop-Out dengan data simulasi realistis.
+            </p>
+        </div>
+        ''', unsafe_allow_html=True)
+        if st.button("🧪 Buka Demo Dashboard Sekarang (Tanpa Upload)", type="primary", use_container_width=True):
+            st.session_state["use_demo_clicked"] = True
+            st.rerun()
+
     st.stop()
 
 # Siapkan parameter backtest
@@ -1368,12 +1457,19 @@ for rid, sess in ranges.items():
     sm, em = hhmm_to_min(a), hhmm_to_min(b)
     sess_label[rid] = f"{(sm//60)%24:02d}:{sm%60:02d}-{(em//60)%24:02d}:{em%60:02d}"
 
-# Load Ticks (Menggunakan cache cepat)
-try:
-    t, bid, ask = get_cached_ticks(tick_file_to_load, args.server_offset, args.tz)
-except Exception as e:
-    st.error(f"Gagal memproses file tick: {e}")
-    st.stop()
+# Load Ticks (Demo atau Riil)
+if is_demo_mode or st.session_state.get("use_demo_clicked"):
+    t, bid, ask = generate_demo_ticks()
+    is_demo_active = True
+    data_label_str = "Simulasi Demo Realistis (Juli - Oktober 2024)"
+else:
+    try:
+        t, bid, ask = get_cached_ticks(tick_file_to_load, args.server_offset, args.tz)
+        is_demo_active = False
+        data_label_str = f"Data Riil: {os.path.basename(tick_file_to_load)}"
+    except Exception as e:
+        st.error(f"Gagal memproses file tick: {e}")
+        st.stop()
 
 # Eksekusi Simulasi Range
 with st.spinner("Menghitung backtest dan logika eksekusi real tick order..."):
@@ -1428,6 +1524,42 @@ if opt_grid:
 # -----------------------------------------------------------------------------
 rrr_ratio = f"1 : {args.tp/args.sl:.2f}" if (args.sl and args.sl > 0) else "Tanpa SL"
 sess_selected_name = "Range 1 s/d 6" if selected_range_key == -1 else ("Semua Range (1-7)" if selected_range_key == 0 else f"Range {selected_range_key}")
+
+# Banner Status Data (Demo vs Riil)
+if is_demo_active:
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.06) 100%); border: 1px solid #F59E0B; border-radius: 12px; padding: 14px 20px; margin-bottom: 22px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:24px;">🧪</span>
+                <div>
+                    <strong style="color:#92400E; font-size:14px;">Mode Demo Aktif — Simulasi 450 Trade USTEC Intraday Breakout</strong>
+                    <div style="color:#78350F; font-size:12px; margin-top:2px;">
+                        Dashboard sedang menampilkan preview visualisasi lengkap (streak win/loss, equity curve, heatmap optimizer). Untuk menganalisis data MT5 riil Anda, pilih menu <b>"Upload File CSV"</b> di bilah samping kiri.
+                    </div>
+                </div>
+            </div>
+            <span style="background:#FEF3C7; color:#B45309; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #FCD34D;">PREVIEW MODE</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%); border: 1px solid #10B981; border-radius: 12px; padding: 14px 20px; margin-bottom: 22px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:24px;">✅</span>
+                <div>
+                    <strong style="color:#065F46; font-size:14px;">Data Riil MT5/Exness Aktif: {os.path.basename(tick_file_to_load) if tick_file_to_load else 'Data CSV'}</strong>
+                    <div style="color:#047857; font-size:12px; margin-top:2px;">
+                        Backtest kuantitatif dihitung langsung berdasarkan order fill asli dan spread Exness CFD.
+                    </div>
+                </div>
+            </div>
+            <span style="background:#D1FAE5; color:#047857; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #6EE7B7;">LIVE DATA</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown(f"""
 <div class="terminal-banner">
